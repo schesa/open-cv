@@ -27,6 +27,12 @@ print("Padding is {}".format(CFG_PADDING))
 CFG_GAMMA = float(default_config["Gamma"])
 print("Gamma is {}".format(CFG_GAMMA))
 
+CFG_SCALE = float(default_config["Scale"])
+print("Scale is {}".format(CFG_SCALE))
+
+CFG_SHEAR = float(default_config["Shear"])
+print("Shear is {}".format(CFG_SHEAR))
+
 # Init tkinter
 top = tk.Tk()
 top.title("Choose a directory")
@@ -45,22 +51,44 @@ def save_img(aug_dir, img_name, algorithm_name, img):
     cv2.imwrite(os.path.join(aug_dir, get_aug_img_name(img_name, algorithm_name)), img)
 
 
+def apply_alg(name, img, value, value2=0):
+    if name.lower() == 'blur':
+        median = cv2.medianBlur(img, int(value))
+        return median
+    elif name.lower() == 'contrast_brightness':
+        Contrast_Brightness_img = cv2.convertScaleAbs(img, alpha=value, beta=value2)
+        return Contrast_Brightness_img
+    elif name.lower() == 'rotation':
+        rotation_img = cv2.rotate(img, int(value))
+        return rotation_img
+    elif name.lower() == 'gamma':
+        invGamma = 1.0 / float(value)
+        table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+        gamma_img = cv2.LUT(img, table)
+        return gamma_img
+    elif name.lower() == 'scale':
+        res_img = cv2.resize(img,None,fx=float(value), fy=float(value))
+        return res_img
+    else:
+        print('Algorithm ' + name + ' not implemented')
+        return img
+
+
 def generate_aug(path, img_name, aug_dir):
     print('IMG NAME ' + img_name)
 
     img = cv2.imread(os.path.join(path, img_name), -1)
 
     # Blur
-    median = cv2.medianBlur(img, CFG_BLUR)
+    median = apply_alg('Blur', img, CFG_BLUR)
     save_img(aug_dir, img_name, 'Blur', median)
 
     # Contrast and Brightness
-    Contrast_Brightness_img = cv2.convertScaleAbs(img, alpha=CFG_CONTRAST, beta=CFG_BRIGHTNESS)
+    Contrast_Brightness_img = apply_alg('Contrast_Brightness', img, CFG_CONTRAST, CFG_BRIGHTNESS)
     save_img(aug_dir, img_name, 'Contrast_Brightness', Contrast_Brightness_img)
-    # cv2.imwrite(os.path.join(aug_dir, get_aug_img_name(img_name, 'Contrast_Brightness')), img)
 
     # Rotation
-    rotation_img = cv2.rotate(img, CFG_ROTATION)
+    rotation_img = apply_alg('Rotation', img, CFG_ROTATION)
     save_img(aug_dir, img_name, 'Rotation', rotation_img)
 
     # Padding
@@ -97,10 +125,35 @@ def generate_aug(path, img_name, aug_dir):
     save_img(aug_dir, img_name, 'Border_Reflect', border)
 
     # Gamma
-    invGamma = 1.0 / CFG_GAMMA
-    table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
-    gamma_img = cv2.LUT(img, table)
+    # invGamma = 1.0 / CFG_GAMMA
+    # table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+    # gamma_img = cv2.LUT(img, table)
+    gamma_img = apply_alg('Gamma', img, CFG_GAMMA)
     save_img(aug_dir, img_name, 'Gamma', gamma_img)
+
+    # Scale
+    res_img = apply_alg('Scale', img, CFG_SCALE)
+    save_img(aug_dir, img_name, 'Scale', res_img)
+
+    # Shear
+    rows, cols = img.shape[:2]       
+    pts1 = np.float32([[5,5],[20,5],[5,20]])
+    pt1 = 5+CFG_SHEAR*np.random.uniform()-CFG_SHEAR/2
+    pt2 = 20+CFG_SHEAR*np.random.uniform()-CFG_SHEAR/2
+    pts2 = np.float32([[pt1,5],[pt2,pt1],[5,pt2]])
+    shear_M = cv2.getAffineTransform(pts1,pts2)
+    shear_img = cv2.warpAffine(img,shear_M,(cols,rows))
+    save_img(aug_dir, img_name, 'Shear', shear_img)
+
+    #Combos
+    for combo_name in config_object:
+        if combo_name.lower() != 'default':
+            print(combo_name)
+            for algorithm_name in config_object[combo_name]:
+                value = config_object[combo_name][algorithm_name]
+                print(algorithm_name+" "+value)
+                img = apply_alg(algorithm_name, img, value)
+            save_img(aug_dir, img_name, combo_name, img)
 
 
 def dir_click(path):
