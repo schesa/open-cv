@@ -7,14 +7,14 @@ Tkinter was used to create a GUI to select a folder of images that will be augme
 In config.ini augmentation details can be specified. Available configuration keys are:
 
 
-Blur ex. 5
-Brightness ex. 30
-Contrast ex. 1.2
-Gamma ex. 2.0
-Scale ex. 0.6 
-Rotation ex. 0-clockwise, 1-180 degrees, 2-counterclockwise
-Padding ex. 100(px)
-Shear ex. 10
+* Blur ex. 5
+* Brightness ex. 30
+* Contrast ex. 1.2
+* Gamma ex. 2.0
+* Scale ex. 0.6 
+* Rotation ex. 0-clockwise, 1-180 degrees, 2-counterclockwise
+* Padding ex. 100(px)
+* Shear ex. 10
 
 
 In the default configuration group are specified configurations that will be applied solo for each image in the set. 
